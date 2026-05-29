@@ -5,7 +5,7 @@ edition = "2024"
 
 [lib]
 name = "sensortheatre"
-crate-type = ["staticlib"]
+crate-type = ["staticlib", "rlib"]
 
-[dependencies]
+[target.'cfg(target_os = "none")'.dependencies]
 panic-halt = "1.0.0"

@@ -2,7 +2,7 @@
 
 use crate::utils::lcg_normalized;
 
-#[derive(Clone, Copy, Default, Debug)]
+#[derive(Clone, Copy, Default, Debug, PartialEq)]
 pub struct Triple {
 	pub x: f32,
 	pub y: f32,
@@ -48,11 +48,4 @@ impl Triple {
 	pub fn scale(self, scalar: f32) -> Self {
 		Self::new(self.x * scalar, self.y * scalar, self.z * scalar)
 	}
-}
-
-#[derive(Clone, Copy, Default)]
-pub struct SensorNoise {
-	pub accl: f32,
-	pub gyro: f32,
-	pub baro: f32
 }
