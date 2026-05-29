@@ -49,7 +49,10 @@ impl<const N: usize> Simulation<N> {
 
 	pub fn then(&mut self, ms: u32, accl: Triple, gyro: Triple) -> &mut Self {
 		if self.count < N {
-			self.points[self.count] = Snapshot { time: ms, accl, gyro };
+			let prev = self.points[self.count - 1].time;
+			self.points[self.count] = Snapshot {
+				time: prev + ms, accl, gyro
+			};
 			self.count += 1;
 		}
 		self
