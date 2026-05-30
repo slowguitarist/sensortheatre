@@ -14,7 +14,7 @@ impl Triple {
 		Self {x, y, z}
 	}
 
-	pub fn iir(prev: Self, target: Self, alpha: f32) -> Self {
+	pub(crate) fn iir(prev: Self, target: Self, alpha: f32) -> Self {
 		Self {
 			x: prev.x + alpha * (target.x - prev.x),
 			y: prev.y + alpha * (target.y - prev.y),
@@ -22,7 +22,7 @@ impl Triple {
 		}
 	}
 
-	pub fn noise(mut self, noise: f32, rng: &mut u32) -> Self {
+	pub(crate) fn noise(mut self, noise: f32, rng: &mut u32) -> Self {
 		self.x += lcg_normalized(rng) * noise;
 		self.y += lcg_normalized(rng) * noise;
 		self.z += lcg_normalized(rng) * noise;

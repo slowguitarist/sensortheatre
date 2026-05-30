@@ -7,11 +7,11 @@ const ALPHA_SENSOR: f32 = 0.4;
 const GRAVITY_SI: f32 = 9.80665;
 
 pub struct Properties {
-	pub time: u32,
-	pub odr: u32,
-	pub prng: u32,
-	pub noise: f32,
-	pub idx: usize,
+	pub(crate) time: u32,
+	pub(crate) odr: u32,
+	pub(crate) prng: u32,
+	pub(crate) noise: f32,
+	pub(crate) idx: usize,
 }
 
 impl Properties {
@@ -21,8 +21,8 @@ impl Properties {
 }
 
 pub struct Sensor<T> {
-	pub prop: Properties,
-	pub kind: T
+	pub(crate) prop: Properties,
+	pub(crate) kind: T
 }
 
 impl<T: Default> Sensor<T> {
@@ -73,6 +73,15 @@ impl Evaluatable<Triple> for Accl {
 
 		let noisy = self.model.noise(prop.noise, &mut prop.prng);
 		self.accel = Triple::iir(self.accel, noisy, ALPHA_SENSOR);
+	}
+}
+
+impl Accl {
+	pub(crate) fn current_velocity(&self) -> Triple {
+		self.velocity
+	}
+	pub(crate) fn current_position(&self) -> Triple {
+		self.position
 	}
 }
 

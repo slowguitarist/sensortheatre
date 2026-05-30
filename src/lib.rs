@@ -16,14 +16,14 @@ pub type Gyroscope = Sensor<Gyro>;
 
 #[derive(Clone, Copy, Default)]
 pub struct Snapshot {
-	pub time: u32,
-	pub accl: Triple,
-	pub gyro: Triple
+	pub(crate) time: u32,
+	pub(crate) accl: Triple,
+	pub(crate) gyro: Triple
 }
 
 pub struct Simulation<const N: usize> {
-	pub points: [Snapshot; N],
-	pub count: usize
+	pub(crate) points: [Snapshot; N],
+	pub(crate) count: usize
 }
 
 impl<const N: usize> Simulation<N> {
@@ -90,5 +90,15 @@ impl<const N: usize> Simulation<N> {
 		}
 
 		Ok(dev.kind.reading())
+	}
+
+	pub fn vel(&self, dev: &mut Accelerometer, time: u32) -> Triple {
+		let _ = self.get(dev, time);
+		dev.kind.current_velocity()
+	}
+
+	pub fn pos(&self, dev: &mut Accelerometer, time: u32) -> Triple {
+		let _ = self.get(dev, time);
+		dev.kind.current_position()
 	}
 }
