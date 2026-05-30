@@ -1,7 +1,6 @@
 {
 	"version": "0.2.0",
 	"configurations": [
-
 		{
 			"name": "Debug unit tests in library 'sensortheatre'",
 			"type": "lldb",
@@ -21,6 +20,18 @@
 				"args": [
 					"test",
 					"--test=demo",
+					"--target=host-tuple"
+				]
+			}
+		},
+		{
+			"name": "Debug integration test 'rocket'",
+			"type": "lldb",
+			"request": "launch",
+			"cargo": {
+				"args": [
+					"test",
+					"--test=rocket",
 					"--target=host-tuple"
 				]
 			}

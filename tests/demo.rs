@@ -1,13 +1,15 @@
+// tests/demo.rs
+
 use core::{assert_eq, assert};
 
 use sensortheatre::{Simulation, Accelerometer, Gyroscope};
 use sensortheatre::measm::Triple;
 
 #[test]
-fn rocket_demo() {
+fn ascent_demo() {
 	// Initialize sensors and simulation
-	let mut accel = Accelerometer::new(10, 0.8);
-	let mut gyro = Gyroscope::new(15, 0.7);
+	let mut accel = Accelerometer::new(10, 0.8, 0.75);
+	let mut gyro = Gyroscope::new(15, 0.7, 0.75);
 
 	let mut ascent = Simulation::<4>::init(
 		Triple::new(0.0, 0.0, 9.81),

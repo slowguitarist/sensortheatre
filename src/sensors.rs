@@ -2,8 +2,7 @@
 
 use crate::{measm::*, Snapshot};
 
-const ALPHA_MODEL: f32 = 0.05;
-const ALPHA_SENSOR: f32 = 0.4;
+const SMOOTH_FAC: f32 = 0.16667;
 const GRAVITY_SI: f32 = 9.80665;
 
 pub struct Properties {
@@ -11,12 +10,15 @@ pub struct Properties {
 	pub(crate) odr: u32,
 	pub(crate) prng: u32,
 	pub(crate) noise: f32,
+	pub(crate) alpha: f32,
 	pub(crate) idx: usize,
 }
 
 impl Properties {
-	const fn new(odr: u32, noise: f32) -> Self {
-		Self { time: 0, odr, prng: 0x112DECAF, noise, idx: 0 }
+	const fn new(odr: u32, noise: f32, alpha: f32) -> Self {
+		Self {
+			time: 0, odr, prng: 0x112DECAF, noise, alpha, idx: 0
+		}
 	}
 }
 
@@ -26,9 +28,9 @@ pub struct Sensor<T> {
 }
 
 impl<T: Default> Sensor<T> {
-	pub fn new(odr: u32, noise: f32) -> Self {
+	pub fn new(odr: u32, noise: f32, alpha: f32) -> Self {
 		Self {
-			prop: Properties::new(odr, noise),
+			prop: Properties::new(odr, noise, alpha),
 			kind: T::default()
 		}
 	}
@@ -65,14 +67,16 @@ impl Evaluatable<Triple> for Accl {
 
 	fn step(&mut self, target: Triple, prop: &mut Properties, dt: f32)
 	{
-		self.model = Triple::iir(self.model, target, ALPHA_MODEL);
+		self.model = Triple::iir(self.model, target, SMOOTH_FAC);
 
-		let net_accel = self.model.sub_scalar(GRAVITY_SI);
+		let grav = Triple::new(0.0, 0.0, GRAVITY_SI);
+		let net_accel = self.model.sub(grav);
+
 		self.velocity = self.velocity.add(net_accel.scale(dt));
 		self.position = self.position.add(self.velocity.scale(dt));
 
 		let noisy = self.model.noise(prop.noise, &mut prop.prng);
-		self.accel = Triple::iir(self.accel, noisy, ALPHA_SENSOR);
+		self.accel = Triple::iir(self.accel, noisy, prop.alpha);
 	}
 }
 
@@ -107,8 +111,8 @@ impl Evaluatable<Triple> for Gyro {
 
 	fn step(&mut self, target: Triple, prop: &mut Properties, _dt: f32)
 	{
-		self.model = Triple::iir(self.model, target, ALPHA_MODEL);
+		self.model = Triple::iir(self.model, target, SMOOTH_FAC);
 		let noisy = self.model.noise(prop.noise, &mut prop.prng);
-		self.omega = Triple::iir(self.omega, noisy, ALPHA_SENSOR);
+		self.omega = Triple::iir(self.omega, noisy, prop.alpha);
 	}
 }
