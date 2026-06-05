@@ -1,118 +1,79 @@
 // src/sensors.rs
 
-use crate::{measm::*, Snapshot};
+use crate::measm::{Noisy, Vector, XYZ};
+use crate::device::Properties;
 
 const SMOOTH_FAC: f32 = 0.16667;
 const GRAVITY_SI: f32 = 9.80665;
 
-pub struct Properties {
-	pub(crate) time: u32,
-	pub(crate) odr: u32,
-	pub(crate) prng: u32,
-	pub(crate) noise: f32,
-	pub(crate) alpha: f32,
-	pub(crate) idx: usize,
-}
-
-impl Properties {
-	const fn new(odr: u32, noise: f32, alpha: f32) -> Self {
-		Self {
-			time: 0, odr, prng: 0x112DECAF, noise, alpha, idx: 0
-		}
-	}
-}
-
-pub struct Sensor<T> {
-	pub(crate) prop: Properties,
-	pub(crate) kind: T
-}
-
-impl<T: Default> Sensor<T> {
-	pub fn new(odr: u32, noise: f32, alpha: f32) -> Self {
-		Self {
-			prop: Properties::new(odr, noise, alpha),
-			kind: T::default()
-		}
-	}
-}
-
-pub trait Evaluatable<T> {
-	fn prime(&mut self, value: T);
-	fn select(point: &Snapshot) -> T;
+pub trait SensorKind<T> {
+	fn init(&mut self, value: T);
 	fn reading(&self) -> T;
-	fn step(&mut self, target: T, prop: &mut Properties, dt: f32);
+	fn step(&mut self, target: T, p: &mut Properties, dt: f32);
 }
 
 #[derive(Default)]
 pub struct Accl {
-	model: Triple,
-	accel: Triple,
-	velocity: Triple,
-	position: Triple
+	model: XYZ,
+	accel: XYZ,
+	velocity: XYZ,
+	position: XYZ
 }
 
-impl Evaluatable<Triple> for Accl {
-	fn prime(&mut self, value: Triple) {
+impl SensorKind<XYZ> for Accl {
+	fn init(&mut self, value: XYZ) {
 		self.model = value;
 		self.accel = value;
 	}
-
-	fn select(point: &Snapshot) -> Triple {
-		point.accl
-	}
 	
-	fn reading(&self) -> Triple {
+	fn reading(&self) -> XYZ {
 		self.accel
 	}
 
-	fn step(&mut self, target: Triple, prop: &mut Properties, dt: f32)
+	fn step(&mut self, target: XYZ, p: &mut Properties, dt: f32)
 	{
-		self.model = Triple::iir(self.model, target, SMOOTH_FAC);
+		self.model = self.model.iir(target, SMOOTH_FAC);
 
-		let grav = Triple::new(0.0, 0.0, GRAVITY_SI);
+		let grav = (0.0, 0.0, GRAVITY_SI);
 		let net_accel = self.model.sub(grav);
 
 		self.velocity = self.velocity.add(net_accel.scale(dt));
 		self.position = self.position.add(self.velocity.scale(dt));
 
-		let noisy = self.model.noise(prop.noise, &mut prop.prng);
-		self.accel = Triple::iir(self.accel, noisy, prop.alpha);
+		let noisy = self.model.noise(p.noise, &mut p.prng);
+		self.accel = self.accel.iir(noisy, p.alpha);
 	}
 }
 
 impl Accl {
-	pub(crate) fn current_velocity(&self) -> Triple {
+	pub(crate) fn current_velocity(&self) -> XYZ {
 		self.velocity
 	}
-	pub(crate) fn current_position(&self) -> Triple {
+	pub(crate) fn current_position(&self) -> XYZ {
 		self.position
 	}
 }
 
 #[derive(Default)]
 pub struct Gyro {
-	model: Triple,
-	omega: Triple
+	model: XYZ,
+	omega: XYZ
 }
 
-impl Evaluatable<Triple> for Gyro {
-	fn prime(&mut self, value: Triple) {
+impl SensorKind<XYZ> for Gyro {
+	fn init(&mut self, value: XYZ) {
 		self.model = value;
 		self.omega = value;
 	}
-
-	fn select(point: &Snapshot) -> Triple {
-		point.gyro
-	}
 	
-	fn reading(&self) -> Triple {
+	fn reading(&self) -> XYZ {
 		self.omega
 	}
 
-	fn step(&mut self, target: Triple, prop: &mut Properties, _dt: f32)
+	fn step(&mut self, target: XYZ, p: &mut Properties, _dt: f32)
 	{
-		self.model = Triple::iir(self.model, target, SMOOTH_FAC);
-		let noisy = self.model.noise(prop.noise, &mut prop.prng);
-		self.omega = Triple::iir(self.omega, noisy, prop.alpha);
+		self.model = self.model.iir(target, SMOOTH_FAC);
+		let noisy = self.model.noise(p.noise, &mut p.prng);
+		self.omega = self.omega.iir(noisy, p.alpha);
 	}
 }
