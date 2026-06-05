@@ -63,13 +63,13 @@ That's it! You can now add a public alias for your sensor to [lib.rs](./src/lib.
 pub type Pulsar<const N: usize> = Sensor<N, Weird, Weirdometer>;
 ```
 
-API, time calculations, and data points management are provided by the library. Optionally, you can combine the new sensor into a preset with another sensor(s) [like this](./src/presets.rs).
+API, time calculations, and data points management are provided by the `Sensor` type. Optionally, you can combine the new sensor into a preset with another sensor(s) [like this](./src/presets.rs). Usage example:
 
 ```rust
 let mut star = Pulsar::<3>::new(40, 0.6, 0.3, (0.0, (0, 0), -10));
 star
 	.then(600 /* ms */, (92.42, (0, 3), -14))
-	.then(1400, (188.21, (1, 4), 2));
+	.then(1400 /* since last then() */, (188.21, (1, 4), 2));
 	// ...
 
 println!("{:?}", star.get(1000 /* elapsed */).unwrap());
